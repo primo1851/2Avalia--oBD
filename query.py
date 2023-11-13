@@ -122,23 +122,31 @@ class TeacherCRUD:
     def create(self, name, ano_nasc, cpf):
         query = "CREATE (prof:Teacher {name: $name, ano_nasc: $ano_nasc, cpf: $cpf})"
         parameters = {"name": name, "ano_nasc": ano_nasc, "cpf": cpf}
-        self.database.run_query(query, parameters)
+        result = self.database.run_query(query, parameters)
+        return list(result)
 
     def read(self, name):
         query = "MATCH (prof:Teacher {name: $name}) RETURN prof"
         parameters = {"name": name}
         result = self.database.run_query(query, parameters)
-        return result.single()
+
+        # Armazenar os resultados em uma lista
+        result_list = list(result)
+
+        # Retornar a lista ou o primeiro item da lista, dependendo do que você precisa
+        return result_list
 
     def delete(self, name):
         query = "MATCH (prof:Teacher {name: $name}) DELETE prof"
         parameters = {"name": name}
-        self.database.run_query(query, parameters)
+        result = self.database.run_query(query, parameters)
+        return list(result)
 
     def update(self, name, new_cpf):
         query = "MATCH (prof:Teacher {name: $name}) SET prof.cpf = $new_cpf"
         parameters = {"name": name, "new_cpf": new_cpf}
-        self.database.run_query(query, parameters)
+        result = self.database.run_query(query, parameters)
+        return list(result)
 
 
 teacher_crud = TeacherCRUD(database)
@@ -150,5 +158,57 @@ print("Resultados para o professor Chris Lima:")
 print(result_Teacher_search)
 
 teacher_crud.update("Chris Lima", "162.052.777-77")
+
+
+class CLI:
+    def __init__(self):
+        self.database = Database("bolt://localhost:7687", "primo", "Didyoumissme?")
+        self.teacher_crud = TeacherCRUD(self.database)
+
+    def run(self):
+        while True:
+            print("\n1. Criar Professor")
+            print("2. Ler Professor")
+            print("3. Deletar Professor")
+            print("4. Atualizar CPF do Professor")
+            print("5. Sair")
+
+            choice = input("Escolha uma opção: ")
+
+            if choice == "1":
+                name = input("Nome do Professor: ")
+                ano_nasc = input("Ano de Nascimento: ")
+                cpf = input("CPF: ")
+                self.teacher_crud.create(name, ano_nasc, cpf)
+                print("Professor criado com sucesso!")
+
+            elif choice == "2":
+                name = input("Nome do Professor: ")
+                result = self.teacher_crud.read(name)
+                print(result)
+
+            elif choice == "3":
+                name = input("Nome do Professor a ser deletado: ")
+                self.teacher_crud.delete(name)
+                print("Professor deletado com sucesso!")
+
+            elif choice == "4":
+                name = input("Nome do Professor: ")
+                new_cpf = input("Novo CPF: ")
+                self.teacher_crud.update(name, new_cpf)
+                print("CPF do Professor atualizado com sucesso!")
+
+            elif choice == "5":
+                print("Saindo...")
+                self.database.close()
+                break
+
+            else:
+                print("Opção inválida. Tente novamente.")
+
+
+if __name__ == "__main__":
+    cli = CLI()
+    cli.run()
 
 database.close()
